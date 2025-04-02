@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse" style="min-height: 100vh;">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-white active" href="admin-dashboard.html">
+                                <i class="fas fa-home"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="manage-products.html">
+                                <i class="fas fa-box"></i> Products
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="#">
+                                <i class="fas fa-shopping-cart"></i> Orders
+                            </a>
+                        </li>
+                        <!-- Add this to the sidebar navigation -->
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="manage-users.html">
+                                <i class="fas fa-users"></i> Users
+                            </a>
+                        </li>
+                            <li class="nav-item mt-auto">
+                                <a class="nav-link text-white" href="#" onclick="logout()">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Add after the dashboard title -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1>Dashboard</h1>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-secondary" onclick="filterData('7days')">Last 7 Days</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="filterData('30days')">Last 30 Days</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="filterData('all')">All Time</button>
+                    </div>
+                </div>
+
+                <!-- Update the script section -->
+                <script>
+                    // Add this at the beginning of your script
+                    function checkAdminAuth() {
+                        const isAuthenticated = localStorage.getItem('adminAuthenticated') === 'true';
+                        if (!isAuthenticated) {
+                            window.location.href = 'admin-login.html';
+                        }
+                    }
+
+                    // Check authentication when page loads
+                    checkAdminAuth();
+
+                    // Add a logout function
+                    function logout() {
+                        localStorage.removeItem('adminAuthenticated');
+                        window.location.href = 'admin-login.html';
+                    }
+
+                    // Add date filtering function
+                    function filterData(period) {
+                        const currentDate = new Date();
+                        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+                        let filteredOrders;
+
+                        switch (period) {
+                            case '7days':
+                                const sevenDaysAgo = new Date(currentDate.setDate(currentDate.getDate() - 7));
+                                filteredOrders = orders.filter(order => new Date(order.date) >= sevenDaysAgo);
+                                break;
+                            case '30days':
+                                const thirtyDaysAgo = new Date(currentDate.setDate(currentDate.getDate() - 30));
+                                filteredOrders = orders.filter(order => new Date(order.date) >= thirtyDaysAgo);
+                                break;
+                            default:
+                                filteredOrders = orders;
+                        }
+
+                        updateDashboardStats(filteredOrders);
+                    }
+
+                    // Modify updateDashboardStats to accept filtered orders
+                    function updateDashboardStats(filteredOrders = null) {
+                        const currentProducts = JSON.parse(localStorage.getItem('products')) || [];
+                        const orders = filteredOrders || JSON.parse(localStorage.getItem('orders')) || [];
+                        const users = JSON.parse(localStorage.getItem('users')) || [];
+                        
+                        // Update counters
+                        document.getElementById('totalProducts').textContent = currentProducts.length;
+                        document.getElementById('totalOrders').textContent = orders.length;
+                        document.getElementById('totalUsers').textContent = users.length;
+
+                        // Calculate total revenue
+                        const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+                        document.getElementById('totalRevenue').textContent = `$${totalRevenue.toFixed(2)}`;
+
+                        // Destroy existing charts
+                        ['orderChart', 'revenueChart', 'salesComparisonChart', 'categorySalesChart'].forEach(chartId => {
+                            const existingChart = Chart.getChart(chartId);
+                            if (existingChart) existingChart.destroy();
+                        });
+
+                        // Create order statistics chart
+                        new Chart(document.getElementById('orderChart'), {
+                            type: 'bar',
+                            data: {
+                                labels: ['Products', 'Orders', 'Users'],
+                                datasets: [{
+                                    label: 'Total Count',
+                                    data: [currentProducts.length, orders.length, users.length],
+                                    backgroundColor: [
+                                        'rgba(54, 162, 235, 0.5)',
+                                        'rgba(75, 192, 192, 0.5)',
+                                        'rgba(255, 206, 86, 0.5)'
+                                    ],
+                                    borderColor: [
+                                        'rgba(54, 162, 235, 1)',
+                                        'rgba(75, 192, 192, 1)',
+                                        'rgba(255, 206, 86, 1)'
+                                    ],
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    y: {
+                                        beginAtZero: true
+                                    }
+                                }
+                            }
+                        });
+
+                        // Create revenue distribution pie chart
+                        new Chart(document.getElementById('revenueChart'), {
+                            type: 'pie',
+                            data: {
+                                labels: ['Products Revenue', 'Shipping', 'Tax'],
+                                datasets: [{
+                                    data: [totalRevenue * 0.8, totalRevenue * 0.1, totalRevenue * 0.1],
+                                    backgroundColor: [
+                                        'rgba(255, 99, 132, 0.5)',
+                                        'rgba(54, 162, 235, 0.5)',
+                                        'rgba(255, 206, 86, 0.5)'
+                                    ],
+                                    borderColor: [
+                                        'rgba(255, 99, 132, 1)',
+                                        'rgba(54, 162, 235, 1)',
+                                        'rgba(255, 206, 86, 1)'
+                                    ],
+                                    borderWidth: 1
+                                }]
+                            }
+                        });
+
+                        // Sales vs Returns Comparison Chart
+                        // Remove the first getMonthlyData function inside updateDashboardStats and keep only this one
+                        function getMonthlyData(orders) {
+                            // Sort orders by date first
+                            orders.sort((a, b) => new Date(a.date) - new Date(b.date));
+                            
+                            const monthlyStats = {};
+                            
+                            // Initialize all months between first and last order
+                            if (orders.length > 0) {
+                                const firstDate = new Date(orders[0].date);
+                                const lastDate = new Date(orders[orders.length - 1].date);
+                                
+                                for (let d = new Date(firstDate); d <= lastDate; d.setMonth(d.getMonth() + 1)) {
+                                    const monthKey = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+                                    monthlyStats[monthKey] = { sales: 0, returns: 0 };
+                                }
+                            }
+                            
+                            // Add order data
+                            orders.forEach(order => {
+                                const date = new Date(order.date);
+                                const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                                
+                                if (order.status === 'returned') {
+                                    monthlyStats[monthKey].returns += order.total;
+                                } else {
+                                    monthlyStats[monthKey].sales += order.total;
+                                }
+                            });
+                            
+                            // Convert to arrays
+                            const months = Object.keys(monthlyStats);
+                            const sales = months.map(month => monthlyStats[month].sales);
+                            const returns = months.map(month => monthlyStats[month].returns);
+                            
+                            return { months, sales, returns };
+                        }
+
+                        // Inside updateDashboardStats function, update the Sales vs Returns chart
+                        const monthlyData = getMonthlyData(orders);
+                        new Chart(document.getElementById('salesComparisonChart'), {
+                            type: 'bar',
+                            data: {
+                                labels: monthlyData.months,
+                                datasets: [{
+                                    label: 'Sales',
+                                    data: monthlyData.sales,
+                                    backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                    borderWidth: 1,
+                                    borderRadius: 5,
+                                    barPercentage: 0.8
+                                }, {
+                                    label: 'Returns',
+                                    data: monthlyData.returns,
+                                    backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                                    borderColor: 'rgba(255, 99, 132, 1)',
+                                    borderWidth: 1,
+                                    borderRadius: 5,
+                                    barPercentage: 0.8
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        title: {
+                                            display: true,
+                                            text: 'Amount ($)',
+                                            font: {
+                                                weight: 'bold'
+                                            }
+                                        },
+                                        grid: {
+                                            display: true,
+                                            drawBorder: false
+                                        }
+                                    },
+                                    x: {
+                                        title: {
+                                            display: true,
+                                            text: 'Month',
+                                            font: {
+                                                weight: 'bold'
+                                            }
+                                        },
+                                        grid: {
+                                            display: false
+                                        }
+                                    }
+                                },
+                                plugins: {
+                                    legend: {
+                                        position: 'top',
+                                        labels: {
+                                            padding: 20,
+                                            usePointStyle: true,
+                                            pointStyle: 'circle'
+                                        }
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'Monthly Sales and Returns Comparison',
+                                        padding: {
+                                            top: 10,
+                                            bottom: 30
+                                        },
+                                        font: {
+                                            size: 16,
+                                            weight: 'bold'
+                                        }
+                                    }
+                                },
+                                interaction: {
+                                    intersect: false,
+                                    mode: 'index'
+                                }
+                            }
+                        });
+
+                        // Category-wise Sales Chart
+                        const categoryData = getCategorySales(orders);
+                        new Chart(document.getElementById('categorySalesChart'), {
+                            type: 'pie',
+                            data: {
+                                labels: categoryData.categories,
+                                datasets: [{
+                                    data: categoryData.sales,
+                                    backgroundColor: [
+                                        'rgba(255, 99, 132, 0.5)',
+                                        'rgba(54, 162, 235, 0.5)',
+                                        'rgba(255, 206, 86, 0.5)',
+                                        'rgba(75, 192, 192, 0.5)',
+                                        'rgba(153, 102, 255, 0.5)'
+                                    ]
+                                }]
+                            },
+                            options: {
+                                responsive: true
+                            }
+                        });
+                    }
+
+                    function getMonthlyData(orders) {
+                        const months = [];
+                        const sales = [];
+                        const returns = [];
+                        
+                        const monthlyStats = orders.reduce((acc, order) => {
+                            const date = new Date(order.date);
+                            const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+                            
+                            if (!acc[monthKey]) {
+                                acc[monthKey] = { sales: 0, returns: 0 };
+                            }
+                            
+                            if (order.status === 'returned') {
+                                acc[monthKey].returns += order.total;
+                            } else {
+                                acc[monthKey].sales += order.total;
+                            }
+                            
+                            return acc;
+                        }, {});
+
+                        Object.entries(monthlyStats).forEach(([month, data]) => {
+                            months.push(month);
+                            sales.push(data.sales);
+                            returns.push(data.returns);
+                        });
+
+                        return { months, sales, returns };
+                    }
+
+                    function addSampleData() {
+                        const products = [
+                            { id: 1, name: 'Laptop', category: 'Electronics', price: 999 },
+                            { id: 2, name: 'Smartphone', category: 'Electronics', price: 699 },
+                            { id: 3, name: 'T-shirt', category: 'Clothing', price: 29 },
+                            { id: 4, name: 'Jeans', category: 'Clothing', price: 59 },
+                            { id: 5, name: 'Book', category: 'Books', price: 19 }
+                        ];
+
+                        const orders = [
+                            {
+                                id: 1,
+                                date: '2024-03-01',
+                                items: [{
+                                    id: 1,
+                                    name: 'Laptop',
+                                    category: 'Electronics',
+                                    price: 999,
+                                    quantity: 1
+                                }],
+                                total: 999,
+                                status: 'completed'
+                            },
+                            {
+                                id: 2,
+                                date: '2024-03-15',
+                                items: [{
+                                    id: 3,
+                                    name: 'T-shirt',
+                                    category: 'Clothing',
+                                    price: 29,
+                                    quantity: 2
+                                }],
+                                total: 58,
+                                status: 'completed'
+                            },
+                            {
+                                id: 3,
+                                date: '2024-03-20',
+                                items: [{
+                                    id: 5,
+                                    name: 'Book',
+                                    category: 'Books',
+                                    price: 19,
+                                    quantity: 3
+                                }],
+                                total: 57,
+                                status: 'returned'
+                            },
+                            {
+                                id: 4,
+                                date: '2024-03-10',
+                                items: [{
+                                    id: 2,
+                                    name: 'Smartphone',
+                                    category: 'Electronics',
+                                    price: 699,
+                                    quantity: 1
+                                }],
+                                total: 699,
+                                status: 'returned'
+                            },
+                            {
+                                id: 5,
+                                date: '2024-03-05',
+                                items: [{
+                                    id: 4,
+                                    name: 'Jeans',
+                                    category: 'Clothing',
+                                    price: 59,
+                                    quantity: 2
+                                }],
+                                total: 118,
+                                status: 'completed'
+                            }
+                        ];
+
+                        const users = [
+                            { id: 1, name: 'John Doe', email: 'john@example.com' },
+                            { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
+                        ];
+
+                        localStorage.setItem('products', JSON.stringify(products));
+                        localStorage.setItem('orders', JSON.stringify(orders));
+                        localStorage.setItem('users', JSON.stringify(users));
+                    }
+
+                    function getCategorySales(orders) {
+                        // Initialize with known categories
+                        const categoryStats = {
+                            'Electronics': 0,
+                            'Clothing': 0,
+                            'Books': 0
+                        };
+
+                        // Calculate sales for each category
+                        orders.forEach(order => {
+                            order.items.forEach(item => {
+                                if (item.category && categoryStats.hasOwnProperty(item.category)) {
+                                    categoryStats[item.category] += item.price * item.quantity;
+                                }
+                            });
+                        });
+
+                        // Remove categories with zero sales
+                        const filteredCategories = Object.entries(categoryStats)
+                            .filter(([_, value]) => value > 0);
+
+                        return {
+                            categories: filteredCategories.map(([category, _]) => category),
+                            sales: filteredCategories.map(([_, sales]) => sales)
+                        };
+                    }
+
+                    // Add updateProductPerformance function here
+                    function updateProductPerformance() {
+                        // Get orders from localStorage
+                        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+                        const productSales = {};
+
+                        // Calculate sales for each product
+                        orders.forEach(order => {
+                            order.items.forEach(item => {
+                                if (!productSales[item.name]) {
+                                    productSales[item.name] = {
+                                        name: item.name,
+                                        totalSales: 0,
+                                        quantity: 0,
+                                        totalOrders: 0
+                                    };
+                                }
+                                if (order.status !== 'returned') {
+                                    productSales[item.name].totalSales += item.price * item.quantity;
+                                    productSales[item.name].quantity += item.quantity;
+                                    productSales[item.name].totalOrders += 1;
+                                }
+                            });
+                        });
+
+                        // Convert to array and sort by quantity sold
+                        const sortedProducts = Object.values(productSales)
+                            .sort((a, b) => b.quantity - a.quantity);
+
+                        // Display top selling products
+                        const topProductsHtml = sortedProducts.slice(0, 5).map(product => `
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">${product.name}</h6>
+                                        <small>Units Sold: ${product.quantity} | Orders: ${product.totalOrders}</small>
+                                    </div>
+                                    <span class="badge bg-success rounded-pill">$${product.totalSales.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        `).join('');
+                        document.getElementById('topProducts').innerHTML = topProductsHtml || 
+                            '<div class="list-group-item">No products found</div>';
+
+                        // Display least performing products
+                        const lowProductsHtml = sortedProducts.slice(-5).reverse().map(product => `
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">${product.name}</h6>
+                                        <small>Units Sold: ${product.quantity} | Orders: ${product.totalOrders}</small>
+                                    </div>
+                                    <span class="badge bg-warning rounded-pill">$${product.totalSales.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        `).join('');
+                        document.getElementById('lowProducts').innerHTML = lowProductsHtml || 
+                            '<div class="list-group-item">No products found</div>';
+                    }
+
+                    // Initialize data and update dashboard
+                    if (!localStorage.getItem('products') || !localStorage.getItem('orders')) {
+                        addSampleData();
+                    }
+                    
+                    // Call these functions to initialize the dashboard
+                    updateDashboardStats();
+                    updateProductPerformance();
+                </script>
+                <!-- Dashboard Summary -->
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Total Products</h5>
+                                <p class="card-text h2" id="totalProducts">0</p>
+                            </div>
+                        </div>
+                    </div>  <!-- Add this closing div -->
+                    <div class="col-md-4 mb-4">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Total Users</h5>
+                                <p class="card-text h2" id="totalUsers">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Total Orders</h5>
+                                <p class="card-text h2" id="totalOrders">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add new revenue card -->
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Total Revenue</h5>
+                                <p class="card-text h2" id="totalRevenue">$0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add charts section -->
+                <!-- Remove duplicate closing tags -->
+                                <div class="row mt-4">
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h5 class="card-title">Order Statistics</h5>
+                                                <canvas id="orderChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h5 class="card-title">Revenue Distribution</h5>
+                                                <canvas id="revenueChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h5 class="card-title">Sales vs Returns</h5>
+                                                <div style="height: 300px;">
+                                                    <canvas id="salesComparisonChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h5 class="card-title">Category-wise Sales</h5>
+                                                <canvas id="categorySalesChart"></canvas>
+                                            </div>
+                                        </div>
+                                    <!-- Update Product Performance Section -->
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h5 class="card-title">Top Selling Products</h5>
+                                                <div class="list-group" id="topProducts"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h5 class="card-title">Least Performing Products</h5>
+                                                <div class="list-group" id="lowProducts"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </main>
+                        </div>
+                    </div>

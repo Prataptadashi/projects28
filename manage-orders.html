@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Orders</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse" style="min-height: 100vh;">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="admin-dashboard.html">
+                                <i class="fas fa-home"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="manage-products.html">
+                                <i class="fas fa-box"></i> Products
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white active" href="manage-orders.html">
+                                <i class="fas fa-shopping-cart"></i> Orders
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+                    <h1>Manage Orders</h1>
+                </div>
+
+                <!-- Orders Table -->
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Date</th>
+                                <th>Customer Details</th>
+                                <th>Items</th>
+                                <th>Total Amount</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal fade" id="orderDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Order Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="orderDetailsContent">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Add this at the beginning of your script
+        function checkAdminAuth() {
+            const isAuthenticated = localStorage.getItem('adminAuthenticated') === 'true';
+            if (!isAuthenticated) {
+                window.location.href = 'admin-login.html';
+            }
+        }
+
+        // Check authentication when page loads
+        checkAdminAuth();
+        
+        // Remove this line
+        // localStorage.setItem('orders', JSON.stringify([]));
+
+        function displayOrders() {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const tbody = document.getElementById('ordersTableBody');
+            tbody.innerHTML = '';
+            
+            orders.forEach(order => {
+                const tr = document.createElement('tr');
+                const orderDate = new Date(order.date).toLocaleDateString();
+                
+                tr.innerHTML = `
+                    <td>Order #${order.id}</td>
+                    <td>${orderDate}</td>
+                    <td>
+                        <strong>Customer:</strong> ${order.customerName}<br>
+                        <strong>Phone:</strong> ${order.phone}<br>
+                        <strong>Address:</strong> ${order.address}<br>
+                        <strong>Payment:</strong> ${order.paymentMethod}
+                    </td>
+                    <td>${order.items.length} items</td>
+                    <td>₹${order.total.toFixed(2)}</td>
+                    <td>
+                        <select class="form-select form-select-sm" onchange="updateOrderStatus(${order.id}, this.value)">
+                            <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                            <option value="Processing" ${order.status === 'Processing' ? 'selected' : ''}>Processing</option>
+                            <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                            <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="viewOrderDetails(${order.id})">View Details</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function viewOrderDetails(orderId) {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const order = orders.find(o => o.id === orderId);
+            
+            if (order) {
+                const modalContent = document.getElementById('orderDetailsContent');
+                let itemsHtml = '';
+                
+                order.items.forEach(item => {
+                    itemsHtml += `
+                        <div class="d-flex align-items-center mb-3">
+                            <img src="${item.image}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: contain; margin-right: 15px;">
+                            <div>
+                                <h6 class="mb-0">${item.name}</h6>
+                                <small>Price: ₹${item.price} × ${item.quantity} = ₹${item.price * item.quantity}</small>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                modalContent.innerHTML = `
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Order #${order.id}</h6>
+                                <p>Date: ${new Date(order.date).toLocaleDateString()}</p>
+                                <p>Status: ${order.status}</p>
+                                <p>Customer Name: ${order.customerName}</p>
+                                <p>Phone: ${order.phone}</p>
+                                <p>Address: ${order.address}</p>
+                                <p>Payment Method: ${order.paymentMethod}</p>
+                                <p>Total Amount: ₹${order.total.toFixed(2)}</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <h6>Order Items:</h6>
+                        ${itemsHtml}
+                    </div>
+                `;
+
+                new bootstrap.Modal(document.getElementById('orderDetailsModal')).show();
+            }
+        }
+
+        function updateOrderStatus(orderId, newStatus) {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const orderIndex = orders.findIndex(o => o.id === orderId);
+            
+            if (orderIndex !== -1) {
+                orders[orderIndex].status = newStatus;
+                localStorage.setItem('orders', JSON.stringify(orders));
+                displayOrders();
+            }
+        }
+
+        // Display orders when page loads
+        displayOrders();
+    </script>
+</body>
+</html>

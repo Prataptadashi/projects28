@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <h1 class="text-3xl font-bold text-center mb-6">Checkout</h1>
+        <div class="row">
+            <!-- User Details Form -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title text-2xl font-bold mb-4">User Details</h2>
+                        <form id="checkout-form">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="address" class="form-label">Address</label>
+                                <textarea class="form-control" id="address" rows="3" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="payment" class="form-label">Payment Method</label>
+                                <select class="form-select" id="payment" required>
+                                    <option value="">Select Payment Method</option>
+                                    <option value="cod">Cash on Delivery</option>
+                                    <option value="upi">UPI</option>
+                                    <option value="card">Credit/Debit Card</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Place Order</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title text-2xl font-bold mb-4">Order Summary</h2>
+                        <div id="order-summary" class="space-y-4"></div>
+                        <div class="mt-4">
+                            <p class="text-lg font-bold">Total: ₹<span id="order-total">0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+        // Display Order Summary
+        function displayOrderSummary() {
+            const orderSummary = document.getElementById("order-summary");
+            const orderTotal = document.getElementById("order-total");
+            let total = 0;
+
+            orderSummary.innerHTML = "";
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+
+                orderSummary.innerHTML += `
+                    <div class="flex justify-between items-center">
+                        <p>${item.name} (x${item.quantity})</p>
+                        <p>₹${itemTotal.toFixed(2)}</p>
+                    </div>`;
+            });
+
+            orderTotal.textContent = total.toFixed(2);
+        }
+
+        function placeOrder() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (cart.length === 0) {
+                alert('Your cart is empty!');
+                return;
+            }
+
+            const name = document.getElementById("name").value;
+            const address = document.getElementById("address").value;
+            const phone = document.getElementById("phone").value;
+            const payment = document.getElementById("payment").value;
+
+            if (!name || !address || !phone || !payment) {
+                alert("Please fill out all fields.");
+                return;
+            }
+
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const newOrder = {
+                id: Date.now(),
+                date: new Date().toISOString(), // Store as ISO string for better date handling
+                items: cart,
+                total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+                status: 'Pending',
+                customerName: name,
+                address: address,
+                phone: phone,
+                paymentMethod: payment
+            };
+
+            orders.push(newOrder);
+            console.log('New order:', newOrder); // Debug log
+            console.log('All orders:', orders); // Debug log
+            
+            localStorage.setItem('orders', JSON.stringify(orders));
+            localStorage.setItem('cart', JSON.stringify([]));
+            
+            alert('Order placed successfully!');
+            window.location.href = 'order-history.html';
+        }
+
+        // Handle Form Submission
+        document.getElementById("checkout-form").addEventListener("submit", function (e) {
+            e.preventDefault();
+            placeOrder();
+        });
+
+        // Display Order Summary When Page Loads
+        displayOrderSummary();
+    </script>
+</body>
+</html>

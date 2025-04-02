@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flipkart Clone</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <!-- Swiper CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+    <style>
+        .floating-cart {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #3b82f6;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .floating-cart:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+        }
+
+        .promo-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .promo-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .product-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Navbar -->
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-2 flex items-center justify-between">
+            <div class="flex items-center">
+                <img alt="Flipkart logo" class="h-10" src="https://storage.googleapis.com/a1aa/image/PJuxBSJXzI8rwVmMVPuKuxIP3GpN_mQEVElNs6pjSYE.jpg">
+                <span class="text-sm text-yellow-500 ml-2">Explore <span class="font-bold">Plus</span></span>
+            </div>
+            <div class="flex-grow mx-4">
+                <input id="search-bar" class="w-full px-4 py-2 border border-gray-300 rounded" placeholder="Search for Products, Brands and More" type="text">
+            </div>
+            <div class="flex items-center space-x-4">
+                <a class="text-gray-700 hover:text-blue-600" href="dashboard.html"><i class="fas fa-user"></i> Dashboard</a>
+                <a class="text-gray-700 hover:text-blue-600" href="admin-dashboard.html"><i class="fas fa-user-shield"></i> Admin Dashboard</a>
+                <a class="text-gray-700 hover:text-blue-600" href="cart.html">
+                    <i class="fas fa-shopping-cart"></i> Cart
+                    <span class="cart-count" id="cart-count">0</span>
+                </a>
+                <a class="text-gray-700 hover:text-blue-600" href="wishlist.html"><i class="fas fa-heart"></i> Wishlist</a>
+                <a class="text-gray-700 hover:text-blue-600" href="order-history.html"><i class="fas fa-history"></i> Order History</a>
+                <a class="text-gray-700 hover:text-blue-600" href="#"><i class="fas fa-shopping-cart"></i> Cart</a>
+                <!-- Login State -->
+                <div id="login-state">
+                    <a class="text-gray-700 hover:text-blue-600" href="login.html"><i class="fas fa-user"></i> Login</a>
+                    <a class="text-gray-700 hover:text-blue-600" href="signup.html"><i class="fas fa-user-plus"></i> Sign Up</a>
+                </div>
+                <a class="text-gray-700 hover:text-blue-600" href="#"><i class="fas fa-store"></i> Become a Seller</a>
+                <a class="text-gray-700 hover:text-blue-600" href="#"><i class="fas fa-headset"></i> Help</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section with Carousel -->
+    <section class="mt-5">
+        <div class="swiper-container">
+            <div class="swiper-wrapper">
+                <div class="swiper-slide"><img src="/images/b1.png" alt="Banner 1"></div>
+                <div class="swiper-slide"><img src="/images/b2.png" alt="Banner 2"></div>
+                <div class="swiper-slide"><img src="/images/b3.png" alt="Banner 3"></div>
+            </div>
+            <div class="swiper-pagination"></div>
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
+        </div>
+        <div class="text-center mt-5">
+            <h1 class="text-4xl font-bold">Best Deals Await!</h1>
+            <p class="text-lg mt-2">Explore top offers and trending products</p>
+            <button class="shop-now-button mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Shop Now</button>
+        </div>
+    </section>
+
+    <!-- Product Listing Page -->
+    <section class="container mx-auto px-4 mt-10">
+        <h2 class="text-3xl font-bold mb-6">Product Listing</h2>
+
+        <!-- Filters and Sorting -->
+        <div class="flex justify-between mb-4">
+            <div class="flex space-x-4">
+                <button onclick="filterProducts('All')" class="px-4 py-2 bg-blue-600 text-white rounded">All</button>
+                <button onclick="filterProducts('Electronics')" class="px-4 py-2 bg-blue-600 text-white rounded">Electronics</button>
+                <button onclick="filterProducts('Clothing')" class="px-4 py-2 bg-blue-600 text-white rounded">Clothing</button>
+                <button onclick="filterProducts('Footwear')" class="px-4 py-2 bg-blue-600 text-white rounded">Footwear</button>
+                <!-- Price Range Filter -->
+                <select onchange="filterByPriceRange(event)" class="px-4 py-2 border border-gray-300 rounded">
+                    <option value="">Price Range</option>
+                    <option value="0-200">₹0 - ₹200</option>
+                    <option value="200-500">₹200 - ₹500</option>
+                    <option value="500-1000">₹500 - ₹1,000</option>
+                    <option value="1000-5000">₹1,000 - ₹5,000</option>
+                    <option value="5000-10000">₹5,000 - ₹10,000</option>
+                </select>
+            </div>
+            <select id="sort" class="border px-4 py-2 rounded" onchange="sortProducts()">
+                <option value="">Sort By</option>
+                <option value="low">Price: Low to High</option>
+                <option value="high">Price: High to Low</option>
+                <option value="newest">Newest First</option>
+            </select>
+        </div>
+
+        <!-- Product Grid -->
+        <div id="product-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+
+        <!-- Pagination -->
+        <div class="flex justify-center mt-6">
+            <button id="prev-page" class="px-4 py-2 bg-blue-600 text-white rounded mr-2">Previous</button>
+            <button id="next-page" class="px-4 py-2 bg-blue-600 text-white rounded">Next</button>
+        </div>
+    </section>
+
+    <!-- Promotional Cards -->
+    <section class="container mx-auto px-4 mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="promo-card p-8 rounded-lg shadow-md text-center" style="background-image: url('/images/c1.png');">
+            <h2 class="text-2xl font-bold">Electronics</h2>
+            <p>Latest gadgets at unbeatable prices</p>
+        </div>
+        <div class="promo-card p-8 rounded-lg shadow-md text-center" style="background-image: url('/images/c2.png');">
+            <h2 class="text-2xl font-bold">Fashion</h2>
+            <p>Trendy styles curated for you</p>
+        </div>
+        <div class="promo-card p-8 rounded-lg shadow-md text-center" style="background-image: url('/images/c3.png');">
+            <h2 class="text-2xl font-bold">Home Essentials</h2>
+            <p>Upgrade your living space</p>
+        </div>
+    </section>
+
+    <!-- Floating Cart Icon -->
+    <div class="floating-cart" onclick="showCart()">
+        <i class="fas fa-shopping-cart"></i>
+        <span class="cart-count" id="cart-count">0</span>
+    </div>
+
+    <!-- Cart Modal -->
+    <div id="cart-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <div class="bg-white p-6 rounded-lg w-11/12 md:w-1/2 lg:w-1/3">
+            <h2 class="text-2xl font-bold mb-4">Your Cart</h2>
+            <div id="cart-items" class="space-y-4"></div>
+            <div class="mt-4">
+                <p class="text-lg font-bold">Total: ₹<span id="cart-total">0</span></p>
+            </div>
+            <button onclick="closeCart()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded">Close</button>
+            <button onclick="checkout()" class="mt-4 px-4 py-2 bg-green-600 text-white rounded">Checkout</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-10 mt-10">
+        <div class="container mx-auto px-4 grid grid-cols-1 md:grid-cols-5 gap-8">
+            <!-- About Us Section -->
+            <div class="md:col-span-2">
+                <h2 class="text-3xl font-bold mb-4 footer-text"><i class="fas fa-info-circle"></i> About Us</h2>
+                <p class="text-lg footer-text leading-relaxed">
+                    Welcome to Flipkart Clone, your one-stop destination for quality shopping.
+                    We bring convenience, affordability, and a seamless shopping experience.
+                </p>
+            </div>
+
+            <!-- Customer Care -->
+            <div>
+                <h2 class="text-xl font-bold mb-4 footer-text"><i class="fas fa-headset"></i> Customer Care</h2>
+                <ul class="space-y-2">
+                    <li class="footer-text"><i class="fas fa-question-circle mr-2"></i> Help Center</li>
+                    <li class="footer-text"><i class="fas fa-truck mr-2"></i> Track Order</li>
+                    <li class="footer-text"><i class="fas fa-exchange-alt mr-2"></i> Returns & Refunds</li>
+                </ul>
+            </div>
+
+            <!-- Policies -->
+            <div>
+                <h2 class="text-xl font-bold mb-4 footer-text"><i class="fas fa-shield-alt policy-icon"></i> Policies</h2>
+                <ul class="space-y-2">
+                    <li class="footer-text"><i class="fas fa-user-secret mr-2"></i> Privacy Policy</li>
+                    <li class="footer-text"><i class="fas fa-file-contract mr-2"></i> Terms & Conditions</li>
+                    <li class="footer-text"><i class="fas fa-gavel mr-2"></i> Legal Information</li>
+                </ul>
+            </div>
+
+            <!-- Social Media -->
+            <div>
+                <h2 class="text-xl font-bold mb-4 footer-text"><i class="fas fa-share-alt"></i> Follow Us</h2>
+                <div class="flex space-x-4">
+                    <i class="fab fa-facebook-f social-icon text-2xl cursor-pointer"></i>
+                    <i class="fab fa-twitter social-icon text-2xl cursor-pointer"></i>
+                    <i class="fab fa-instagram social-icon text-2xl cursor-pointer"></i>
+                    <i class="fab fa-youtube social-icon text-2xl cursor-pointer"></i>
+                    <i class="fab fa-linkedin-in social-icon text-2xl cursor-pointer"></i>
+                </div>
+            </div>
+
+            <!-- Payment Methods -->
+            <div>
+                <h2 class="text-xl font-bold mb-4 footer-text"><i class="fas fa-credit-card footer-icon"></i> Payment Methods</h2>
+                <div class="flex space-x-4">
+                    <img class="h-10" src="/images/2.png" alt="UPI">
+                    <img class="h-10" src="/images/4.png" alt="RuPay">
+                    <img class="h-10" src="/images/3.png" alt="Visa">
+                    <img class="h-10" src="/images/5.png" alt="MasterCard">
+                    <img class="h-10" src="/images/4.png" alt="Paytm">
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-10 text-lg footer-text">
+            © 2025 Flipkart Clone. All rights reserved. | Made with ❤️ for an amazing shopping experience!
+        </div>
+    </footer>
+
+    <!-- Swiper JS -->
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+    <script>
+        const products = [
+            { id: 1, name: "Smartphone", price: 1000, rating: 4.5, image: "/images/p1.png", category: "Electronics" },
+            { id: 2, name: "T-Shirt", price: 20, rating: 4.2, image: "/images/c2.png", category: "Clothing" },
+            { id: 3, name: "Sneakers", price: 80, rating: 4.7, image: "/images/s1.png", category: "Footwear" },
+            { id: 4, name: "Smartwatch", price: 150, rating: 4.3, image: "/images/p4.png", category: "Electronics" },
+            { id: 5, name: "Jeans", price: 40, rating: 4.1, image: "/images/c2.png", category: "Clothing" },
+            { id: 6, name: "Running Shoes", price: 90, rating: 4.6, image: "/images/s3.png", category: "Footwear" },
+            { id: 7, name: "Laptop", price: 1200, rating: 4.8, image: "/images/p1.png", category: "Electronics" },
+            { id: 8, name: "Hoodie", price: 50, rating: 4.0, image: "/images/c2.png", category: "Clothing" },
+            { id: 9, name: "Casual Shoes", price: 70, rating: 4.4, image: "/images/s1.png", category: "Footwear" },
+            { id: 10, name: "Tablet", price: 300, rating: 4.2, image: "/images/p4.png", category: "Electronics" },
+            { id: 11, name: "Shirt", price: 30, rating: 4.3, image: "/images/c2.png", category: "Clothing" },
+            { id: 12, name: "Formal Shoes", price: 100, rating: 4.5, image: "/images/s2.png", category: "Footwear" },
+            { id: 13, name: "Headphones", price: 150, rating: 4.6, image: "/images/p4.png", category: "Electronics" },
+            { id: 14, name: "Jacket", price: 80, rating: 4.1, image: "/images/c2.png", category: "Clothing" },
+            { id: 15, name: "Sandals", price: 40, rating: 4.0, image: "/images/s1.png", category: "Footwear" },
+            { id: 16, name: "Camera", price: 500, rating: 4.7, image: "/images/p1.png", category: "Electronics" },
+            { id: 17, name: "Sweater", price: 60, rating: 4.2, image: "/images/c2.png", category: "Clothing" },
+            { id: 18, name: "Boots", price: 120, rating: 4.4, image: "/images/s2.png", category: "Footwear" },
+            { id: 19, name: "Speaker", price: 200, rating: 4.3, image: "/images/p4.png", category: "Electronics" },
+            { id: 20, name: "Shorts", price: 25, rating: 4.0, image: "/images/c2.png", category: "Clothing" },
+            { id: 21, name: "Slippers", price: 20, rating: 3.9, image: "/images/s1.png", category: "Footwear" },
+            { id: 22, name: "Drone", price: 800, rating: 4.8, image: "/images/p1.png", category: "Electronics" },
+            { id: 23, name: "Trousers", price: 45, rating: 4.1, image: "/images/c2.png", category: "Clothing" },
+            { id: 24, name: "Sneakers", price: 85, rating: 4.5, image: "/images/s3.png", category: "Footwear" },
+            { id: 25, name: "Smart TV", price: 700, rating: 4.6, image: "/images/p4.png", category: "Electronics" },
+            { id: 26, name: "Blazer", price: 120, rating: 4.3, image: "/images/c2.png", category: "Clothing" },
+            { id: 27, name: "Loafers", price: 60, rating: 4.2, image: "/images/s1.png", category: "Footwear" },
+            { id: 28, name: "Gaming Console", price: 400, rating: 4.7, image: "/images/p1.png", category: "Electronics" },
+            { id: 29, name: "Tank Top", price: 15, rating: 3.8, image: "/images/c2.png", category: "Clothing" },
+            { id: 30, name: "Hiking Boots", price: 130, rating: 4.5, image: "/images/s2.png", category: "Footwear" }
+        ];
+
+        let cart = JSON.parse(localStorage.getItem("cart")) || [];
+        let wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+        let currentPage = 1;
+        const productsPerPage = 8;
+
+        // Check Login State
+         // Check Login State
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    const loginState = document.getElementById("login-state");
+
+    if (currentUser) {
+        // User is logged in
+        loginState.innerHTML = `
+            <div class="flex items-center space-x-2">
+                <span class="text-gray-700">Hello, ${currentUser.name}</span>
+                <button onclick="logout()" class="text-gray-700 hover:text-blue-600">Logout</button>
+            </div>
+        `;
+    } else {
+        // User is not logged in
+        loginState.innerHTML = `
+            <a class="text-gray-700 hover:text-blue-600" href="login.html"><i class="fas fa-user"></i> Login</a>
+            <a class="text-gray-700 hover:text-blue-600" href="signup.html"><i class="fas fa-user-plus"></i> Sign Up</a>
+        `;
+    }
+
+    // Logout Function
+    function logout() {
+        localStorage.removeItem("currentUser");
+        window.location.href = "index.html";
+    }
+
+        function filterProducts(category) {
+            const filteredProducts = category === "All" ? products : products.filter(product => product.category === category);
+            currentPage = 1; // Reset to first page
+            displayProducts(filteredProducts);
+        }
+
+        function filterByPriceRange(event) {
+            const value = event.target.value;
+            if (!value) {
+                displayProducts(products);
+                return;
+            }
+
+            const [minPrice, maxPrice] = value.split("-").map(Number);
+            const filteredProducts = products.filter(product => product.price >= minPrice && product.price <= maxPrice);
+            currentPage = 1; // Reset to first page
+            displayProducts(filteredProducts);
+        }
+
+        function sortProducts() {
+            const value = document.getElementById("sort").value;
+            let sortedProducts = [...products];
+
+            if (value === "low") {
+                sortedProducts.sort((a, b) => a.price - b.price);
+            } else if (value === "high") {
+                sortedProducts.sort((a, b) => b.price - a.price);
+            } else if (value === "newest") {
+                sortedProducts.sort((a, b) => b.id - a.id); // Assuming newer products have higher IDs
+            }
+
+            displayProducts(sortedProducts);
+        }
+
+        function displayProducts(productsList) {
+            const productList = document.getElementById("product-list");
+            productList.innerHTML = "";
+
+            const startIndex = (currentPage - 1) * productsPerPage;
+            const endIndex = startIndex + productsPerPage;
+            const paginatedProducts = productsList.slice(startIndex, endIndex);
+
+            paginatedProducts.forEach(product => {
+                productList.innerHTML += `
+                    <div class="bg-white p-4 rounded shadow-md text-center cursor-pointer product-card" onclick="navigateToProductDetails(${product.id})">
+                        <img src="${product.image}" alt="${product.name}" class="w-full h-40 object-cover mb-3">
+                        <h3 class="text-lg font-bold">${product.name}</h3>
+                        <p class="text-gray-600">Price: ₹${product.price}</p>
+                        <p class="text-yellow-500">Rating: ${product.rating} ⭐</p>
+                        <div class="mt-3 flex justify-center space-x-2">
+                            <button class="px-4 py-2 bg-blue-600 text-white rounded add-to-cart" data-id="${product.id}" onclick="event.stopPropagation(); addToCart(${product.id})">Add to Cart</button>
+                            <button class="px-4 py-2 bg-green-600 text-white rounded add-to-wishlist" data-id="${product.id}" onclick="event.stopPropagation(); addToWishlist(${product.id})">Add to Wishlist</button>
+                        </div>
+                    </div>`;
+            });
+
+            updatePaginationButtons(productsList.length);
+        }
+
+        function updatePaginationButtons(totalProducts) {
+            const prevButton = document.getElementById("prev-page");
+            const nextButton = document.getElementById("next-page");
+
+            prevButton.disabled = currentPage === 1;
+            nextButton.disabled = currentPage * productsPerPage >= totalProducts;
+        }
+
+        document.getElementById("prev-page").addEventListener("click", () => {
+            if (currentPage > 1) {
+                currentPage--;
+                displayProducts(products);
+            }
+        });
+
+        document.getElementById("next-page").addEventListener("click", () => {
+            if (currentPage * productsPerPage < products.length) {
+                currentPage++;
+                displayProducts(products);
+            }
+        });
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                const cartItem = cart.find(item => item.id === productId);
+                if (cartItem) {
+                    cartItem.quantity = (cartItem.quantity || 1) + 1;
+                } else {
+                    cart.push({
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        image: product.image,
+                        quantity: 1
+                    });
+                }
+                localStorage.setItem("cart", JSON.stringify(cart));
+                updateCartCount();
+                showCart(); // Show cart after adding item
+            }
+        }
+
+        function showCart() {
+            const cartModal = document.getElementById("cart-modal");
+            const cartItems = document.getElementById("cart-items");
+            const cartTotal = document.getElementById("cart-total");
+        
+            cartItems.innerHTML = "";
+            let total = 0;
+        
+            cart.forEach(item => {
+                const itemTotal = item.price * (item.quantity || 1);
+                total += itemTotal;
+        
+                cartItems.innerHTML += `
+                    <div class="flex justify-between items-center mb-3 p-2 border-b">
+                        <div class="flex items-center">
+                            <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover mr-3">
+                            <div>
+                                <p class="font-bold">${item.name}</p>
+                                <p class="text-gray-600">₹${item.price} × ${item.quantity || 1}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <button class="px-2 py-1 bg-gray-200 rounded" onclick="updateQuantity(${item.id}, ${(item.quantity || 1) - 1})">-</button>
+                            <span class="mx-2">${item.quantity || 1}</span>
+                            <button class="px-2 py-1 bg-gray-200 rounded" onclick="updateQuantity(${item.id}, ${(item.quantity || 1) + 1})">+</button>
+                            <button class="ml-4 px-2 py-1 bg-red-600 text-white rounded" onclick="removeFromCart(${item.id})">Remove</button>
+                        </div>
+                    </div>`;
+            });
+        
+            cartTotal.textContent = total.toFixed(2);
+            cartModal.classList.remove("hidden");
+        }
+
+        function updateQuantity(productId, newQuantity) {
+            if (newQuantity < 1) {
+                removeFromCart(productId);
+                return;
+            }
+            
+            const cartItem = cart.find(item => item.id === productId);
+            if (cartItem) {
+                cartItem.quantity = newQuantity;
+                localStorage.setItem("cart", JSON.stringify(cart));
+                showCart(); // Refresh cart display
+                updateCartCount();
+            }
+        }
+
+        function updateCartCount() {
+            const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+            document.getElementById("cart-count").textContent = totalItems;
+        }
+
+        function addToWishlist(productId) {
+            const product = products.find(p => p.id === productId);
+            if (product && !wishlist.some(item => item.id === productId)) {
+                wishlist.push(product);
+                localStorage.setItem("wishlist", JSON.stringify(wishlist));
+                alert("Added to Wishlist!");
+            }
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            localStorage.setItem("cart", JSON.stringify(cart));
+            updateCartCount();
+            showCart(); // Refresh the cart modal
+        }
+
+        function updateCartCount() {
+            document.getElementById("cart-count").textContent = cart.length;
+        }
+
+        function showCart() {
+            const cartModal = document.getElementById("cart-modal");
+            const cartItems = document.getElementById("cart-items");
+            const cartTotal = document.getElementById("cart-total");
+
+            cartItems.innerHTML = "";
+            let total = 0;
+
+            cart.forEach(item => {
+                cartItems.innerHTML += `
+                    <div class="flex justify-between items-center">
+                        <p>${item.name}</p>
+                        <p>₹${item.price}</p>
+                        <button class="px-2 py-1 bg-red-600 text-white rounded" onclick="removeFromCart(${item.id})">Remove</button>
+                    </div>`;
+                total += item.price;
+            });
+
+            cartTotal.textContent = total;
+            cartModal.classList.remove("hidden");
+        }
+
+        function closeCart() {
+            const cartModal = document.getElementById("cart-modal");
+            cartModal.classList.add("hidden");
+        }
+
+        function checkout() {
+            // Get current cart
+            const currentCart = JSON.parse(localStorage.getItem("cart")) || [];
+            
+            if (currentCart.length === 0) {
+                alert("Your cart is empty!");
+                return;
+            }
+        
+            // Calculate total
+            const total = currentCart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
+        
+            // Create new order
+            const newOrder = {
+                date: new Date().toISOString().split('T')[0],
+                status: "Processing",
+                total: total,
+                items: currentCart,
+                address: "To be filled during checkout" // You can add a proper address form in your checkout page
+            };
+        
+            // Get existing orders and add new one
+            const existingOrders = JSON.parse(localStorage.getItem("orders")) || [];
+            existingOrders.push(newOrder);
+            
+            // Save updated orders
+            localStorage.setItem("orders", JSON.stringify(existingOrders));
+        
+            // Clear the cart
+            localStorage.setItem("cart", JSON.stringify([]));
+            cart = [];
+            updateCartCount();
+        
+            alert("Order placed successfully!");
+            window.location.href = "order-history.html";
+        }
+
+        function navigateToProductDetails(productId) {
+            window.location.href = `product-details.html?id=${productId}`;
+        }
+
+        document.getElementById("search-bar").addEventListener("input", function () {
+            const query = this.value.toLowerCase();
+            const filteredProducts = products.filter(p =>
+                p.name.toLowerCase().includes(query) || p.description?.toLowerCase().includes(query)
+            );
+            displayProducts(filteredProducts);
+        });
+
+        displayProducts(products);
+
+        var swiper = new Swiper('.swiper-container', {
+            loop: true,
+            autoplay: { delay: 3000 },
+            pagination: { el: '.swiper-pagination', clickable: true },
+            navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' }
+        });
+    </script>
+</body>
+</html>
