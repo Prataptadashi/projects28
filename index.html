@@ -93,6 +93,9 @@
                 <input id="search-bar" class="w-full px-4 py-2 border border-gray-300 rounded" placeholder="Search for Products, Brands and More" type="text">
             </div>
             <div class="flex items-center space-x-4">
+                <button id="darkModeToggle" class="text-gray-700 hover:text-blue-600">
+                    <i class="fas fa-moon"></i>
+                </button>
                 <a class="text-gray-700 hover:text-blue-600" href="dashboard.html"><i class="fas fa-user"></i> Dashboard</a>
                 <a class="text-gray-700 hover:text-blue-600" href="admin-dashboard.html"><i class="fas fa-user-shield"></i> Admin Dashboard</a>
                 <a class="text-gray-700 hover:text-blue-600" href="cart.html">
@@ -271,6 +274,29 @@
     <!-- Swiper JS -->
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     <script>
+        // Add this at the beginning of your script section
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDarkMode);
+            
+            // Update icon
+            const icon = document.querySelector('#darkModeToggle i');
+            icon.classList.toggle('fa-moon');
+            icon.classList.toggle('fa-sun');
+        }
+
+        // Check for saved dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            const icon = document.querySelector('#darkModeToggle i');
+            icon.classList.remove('fa-moon');
+            icon.classList.add('fa-sun');
+        }
+
+        // Add event listener to dark mode toggle
+        document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+
         const products = [
             { id: 1, name: "Smartphone", price: 1000, rating: 4.5, image: "/images/p1.png", category: "Electronics" },
             { id: 2, name: "T-Shirt", price: 20, rating: 4.2, image: "/images/c2.png", category: "Clothing" },
@@ -599,3 +625,49 @@
     </script>
 </body>
 </html>
+
+<style>
+        /* Dark mode styles */
+        .dark-mode {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+
+        .dark-mode .bg-white {
+            background-color: #2d2d2d !important;
+            color: #ffffff;
+        }
+
+        .dark-mode .text-gray-700 {
+            color: #e0e0e0;
+        }
+
+        .dark-mode .bg-gray-100 {
+            background-color: #1a1a1a;
+        }
+
+        .dark-mode .product-card {
+            background-color: #2d2d2d;
+            border: 1px solid #404040;
+        }
+
+        .dark-mode .card {
+            background-color: #2d2d2d;
+            color: #ffffff;
+        }
+
+        .dark-mode .table-light {
+            background-color: #404040;
+            color: #ffffff;
+        }
+
+        .dark-mode input, .dark-mode select {
+            background-color: #404040;
+            color: #ffffff;
+            border-color: #505050;
+        }
+
+        .dark-mode .footer-text {
+            color: #ffffff;
+        }
+    </style>
