@@ -7,8 +7,21 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+        .toast {
+            min-width: 300px;
+        }
+    </style>
 </head>
 <body>
+    <!-- Add this right after the body tag -->
+    <div class="toast-container"></div>
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
@@ -628,3 +641,103 @@
                             </main>
                         </div>
                     </div>
+                    <script>
+                        // Add notification functions after checkAdminAuth()
+                        function showNotification(title, message, type = 'info') {
+                            const toastContainer = document.querySelector('.toast-container');
+                            const toastId = 'toast-' + Date.now();
+                            
+                            const toastHtml = `
+                                <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                                    <div class="toast-header bg-${type} text-white">
+                                        <strong class="me-auto">${title}</strong>
+                                        <small class="text-white">just now</small>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                                    </div>
+                                    <div class="toast-body">
+                                        ${message}
+                                    </div>
+                                </div>
+                            `;
+                            
+                            toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+                            const toastElement = document.getElementById(toastId);
+                            const bsToast = new bootstrap.Toast(toastElement, {
+                                animation: true,
+                                autohide: true,
+                                delay: 5000
+                            });
+                            bsToast.show();
+                            
+                            toastElement.addEventListener('hidden.bs.toast', () => {
+                                toastElement.remove();
+                            });
+                        }
+
+                        // Add order monitoring function
+                        function monitorOrders() {
+                            let lastOrderCount = (JSON.parse(localStorage.getItem('orders')) || []).length;
+                            let lastOrderStatuses = {};
+                            let lastOrderIds = new Set();
+                            let isFirstRun = true;
+                            
+                            // Initialize last known order statuses and IDs
+                            (JSON.parse(localStorage.getItem('orders')) || []).forEach(order => {
+                                lastOrderStatuses[order.id] = order.status;
+                                lastOrderIds.add(order.id);
+                            });
+                            
+                            // Check for changes every 2 seconds
+                            setInterval(() => {
+                                const currentOrders = JSON.parse(localStorage.getItem('orders')) || [];
+                                const currentOrderIds = new Set(currentOrders.map(order => order.id));
+                                
+                                // Skip notifications only on first run
+                                if (!isFirstRun) {
+                                    // Check for new orders (only truly new ones)
+                                    const newOrders = currentOrders.filter(order => !lastOrderIds.has(order.id));
+                                    if (newOrders.length > 0) {
+                                        showNotification(
+                                            'New Orders',
+                                            `${newOrders.length} new order${newOrders.length > 1 ? 's' : ''} received!`,
+                                            'success'
+                                        );
+                                        updateDashboardStats();
+                                    }
+                                    
+                                    // Check for status changes (only real changes)
+                                    currentOrders.forEach(order => {
+                                        const previousStatus = lastOrderStatuses[order.id];
+                                        if (previousStatus && previousStatus !== order.status) {
+                                            showNotification(
+                                                'Order Status Update',
+                                                `Order #${order.id} status changed from ${previousStatus} to ${order.status}`,
+                                                'info'
+                                            );
+                                            updateDashboardStats();
+                                        }
+                                    });
+                                }
+                                
+                                // Update tracking variables
+                                isFirstRun = false; // Set isFirstRun to false after first execution
+                                lastOrderIds = currentOrderIds;
+                                lastOrderCount = currentOrders.length;
+                                currentOrders.forEach(order => {
+                                    lastOrderStatuses[order.id] = order.status;
+                                });
+                            }, 2000);
+                        }
+
+                        // Initialize everything when the page loads
+                        document.addEventListener('DOMContentLoaded', function() {
+                            if (!localStorage.getItem('products') || !localStorage.getItem('orders')) {
+                                addSampleData();
+                            }
+                            updateDashboardStats();
+                            updateProductPerformance();
+                            monitorOrders(); // Start monitoring orders
+                        });
+                    </script>
+                <!-- Add before closing body tag -->
+                    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -39,6 +39,28 @@
                     <h1>Manage Orders</h1>
                 </div>
 
+                <!-- Add Filter Controls -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <select class="form-select" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Processing">Processing</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Delivered">Delivered</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date" class="form-control" id="dateFilter">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" id="searchFilter" placeholder="Search by Order ID or Customer">
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-secondary" onclick="resetFilters()">Reset Filters</button>
+                    </div>
+                </div>
+
                 <!-- Orders Table -->
                 <div class="table-responsive">
                     <table class="table table-striped">
@@ -91,12 +113,40 @@
         // Remove this line
         // localStorage.setItem('orders', JSON.stringify([]));
 
-        function displayOrders() {
+        let filteredOrders = [];
+
+        function applyFilters() {
             const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const statusFilter = document.getElementById('statusFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+
+            filteredOrders = orders.filter(order => {
+                const matchStatus = !statusFilter || order.status === statusFilter;
+                const matchDate = !dateFilter || new Date(order.date).toLocaleDateString() === new Date(dateFilter).toLocaleDateString();
+                const matchSearch = !searchFilter || 
+                    `Order #${order.id}`.toLowerCase().includes(searchFilter) ||
+                    order.customerName.toLowerCase().includes(searchFilter);
+
+                return matchStatus && matchDate && matchSearch;
+            });
+
+            displayOrders();
+        }
+
+        function resetFilters() {
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('dateFilter').value = '';
+            document.getElementById('searchFilter').value = '';
+            applyFilters();
+        }
+
+        function displayOrders() {
             const tbody = document.getElementById('ordersTableBody');
             tbody.innerHTML = '';
             
-            orders.forEach(order => {
+            // Use filteredOrders instead of getting from localStorage
+            filteredOrders.forEach(order => {
                 const tr = document.createElement('tr');
                 const orderDate = new Date(order.date).toLocaleDateString();
                 
@@ -125,7 +175,27 @@
                 `;
                 tbody.appendChild(tr);
             });
+
+            // Add no results message
+            if (filteredOrders.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center">No orders found</td>
+                    </tr>
+                `;
+            }
         }
+
+        // Initialize filters and event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initial load of all orders
+            applyFilters();
+
+            // Add filter event listeners
+            document.getElementById('statusFilter').addEventListener('change', applyFilters);
+            document.getElementById('dateFilter').addEventListener('change', applyFilters);
+            document.getElementById('searchFilter').addEventListener('input', applyFilters);
+        });
 
         function viewOrderDetails(orderId) {
             const orders = JSON.parse(localStorage.getItem('orders')) || [];
@@ -178,7 +248,8 @@
             if (orderIndex !== -1) {
                 orders[orderIndex].status = newStatus;
                 localStorage.setItem('orders', JSON.stringify(orders));
-                displayOrders();
+                // Reapply filters to update the filtered orders list
+                applyFilters();
             }
         }
 
