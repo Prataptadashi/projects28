@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Reviews</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+        .star-rating {
+            color: #ffd700;
+        }
+        .review-status-approved {
+            background-color: #d4edda;
+        }
+        .review-status-rejected {
+            background-color: #f8d7da;
+        }
+        /* Filter button styles */
+        .btn-group .btn.active {
+            opacity: 1;
+            font-weight: bold;
+        }
+        .btn-group .btn {
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="toast-container"></div>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse" style="min-height: 100vh;">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="admin-dashboard.html">
+                                <i class="fas fa-home"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="manage-products.html">
+                                <i class="fas fa-box"></i> Products
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="#">
+                                <i class="fas fa-shopping-cart"></i> Orders
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="manage-users.html">
+                                <i class="fas fa-users"></i> Users
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="manage-admins.html">
+                                <i class="fas fa-user-shield"></i> Admins
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white active" href="manage-reviews.html">
+                                <i class="fas fa-star"></i> Reviews
+                            </a>
+                        </li>
+                        <li class="nav-item mt-auto">
+                            <a class="nav-link text-white" href="#" onclick="logout()">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1>Manage Reviews</h1>
+                    <!-- Add this after the h1 and before the status filter buttons -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="searchInput" placeholder="Search by product or customer name...">
+                                <button class="btn btn-outline-secondary" type="button" onclick="applyFilters()">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select" id="productFilter">
+                                <option value="">All Products</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text">Rating</span>
+                                <select class="form-select" id="ratingFilter">
+                                    <option value="">All Ratings</option>
+                                    <option value="5">5 Stars</option>
+                                    <option value="4">4+ Stars</option>
+                                    <option value="3">3+ Stars</option>
+                                    <option value="2">2+ Stars</option>
+                                    <option value="1">1+ Star</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-secondary" onclick="filterReviews('all')">All</button>
+                        <button class="btn btn-outline-success" onclick="filterReviews('approved')">Approved</button>
+                        <button class="btn btn-outline-danger" onclick="filterReviews('rejected')">Rejected</button>
+                        <button class="btn btn-outline-warning" onclick="filterReviews('pending')">Pending</button>
+                    </div>
+                </div>
+
+                <!-- Reviews Table -->
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Customer</th>
+                                <th>Rating</th>
+                                <th>Review</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reviewsList"></tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Response Modal -->
+    <div class="modal fade" id="responseModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Respond to Review</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="responseForm">
+                        <input type="hidden" id="reviewId">
+                        <div class="mb-3">
+                            <label class="form-label">Your Response</label>
+                            <textarea class="form-control" id="responseText" rows="3" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitResponse()">Submit Response</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this modal before the closing body tag -->
+    <div class="modal fade" id="reviewDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Review Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="product-details">
+                                <img id="productImage" src="" alt="Product" class="img-fluid mb-3">
+                                <h6 id="productName" class="mb-2"></h6>
+                                <p id="productPrice" class="mb-2"></p>
+                                <p id="productCategory" class="mb-2"></p>
+                                <div id="productRating" class="star-rating mb-3"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="review-details">
+                                <h6>Review Information</h6>
+                                <p><strong>Customer:</strong> <span id="reviewCustomer"></span></p>
+                                <p><strong>Rating:</strong> <span id="reviewRating" class="star-rating"></span></p>
+                                <p><strong>Date:</strong> <span id="reviewDate"></span></p>
+                                <p><strong>Status:</strong> <span id="reviewStatus"></span></p>
+                                <div class="mb-3">
+                                    <strong>Comment:</strong>
+                                    <p id="reviewComment" class="mt-2"></p>
+                                </div>
+                                <div id="reviewResponseSection" class="mb-3">
+                                    <strong>Admin Response:</strong>
+                                    <p id="reviewResponse" class="mt-2"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Add products array at the beginning of the script
+        const products = [
+            { id: 1, name: "Smartphone", price: 1000, rating: 4.5, image: "/images/p1.png", category: "Electronics" },
+            { id: 2, name: "T-Shirt", price: 20, rating: 4.2, image: "/images/c2.png", category: "Clothing" },
+            { id: 3, name: "Sneakers", price: 80, rating: 4.7, image: "/images/s1.png", category: "Footwear" },
+            { id: 4, name: "Wireless Earbuds", price: 100, rating: 5, image: "/images/p1.png", category: "Electronics" },
+            { id: 5, name: "Mechanical Keyboard", price: 100, rating: 4, image: "/images/p1.png", category: "Electronics" },
+            { id: 6, name: "Laptop", price: 100, rating: 1, image: "/images/p1.png", category: "Electronics" }
+        ];
+
+        // Update loadReviews function to fix clickable links
+        // Add these functions before the loadReviews function
+        function populateProductFilter() {
+            const reviews = JSON.parse(localStorage.getItem('reviews')) || [];
+            const uniqueProducts = [...new Set(reviews.map(review => review.productName))];
+            const productFilter = document.getElementById('productFilter');
+            
+            uniqueProducts.sort().forEach(product => {
+                const option = document.createElement('option');
+                option.value = product;
+                option.textContent = product;
+                productFilter.appendChild(option);
+            });
+        }
+
+        // Add this function for status filtering
+        function filterReviews(status) {
+            currentStatusFilter = status;
+            const buttons = document.querySelectorAll('.btn-group button');
+            buttons.forEach(button => {
+                button.classList.remove('active');
+                if (button.textContent.toLowerCase() === status) {
+                    button.classList.add('active');
+                }
+            });
+            applyFilters();
+        }
+
+        // Update the applyFilters function
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const selectedProduct = document.getElementById('productFilter').value;
+            const minRating = parseInt(document.getElementById('ratingFilter').value) || 0;
+
+            const reviews = JSON.parse(localStorage.getItem('reviews')) || [];
+            
+            const filteredReviews = reviews.filter(review => {
+                const matchesSearch = searchTerm === '' || 
+                    review.productName.toLowerCase().includes(searchTerm) ||
+                    review.customerName.toLowerCase().includes(searchTerm);
+                    
+                const matchesProduct = selectedProduct === '' || 
+                    review.productName === selectedProduct;
+                    
+                const matchesRating = review.rating >= minRating;
+                
+                const matchesStatus = currentStatusFilter === 'all' || 
+                    review.status === currentStatusFilter;
+
+                return matchesSearch && matchesProduct && matchesRating && matchesStatus;
+            });
+
+            displayReviews(filteredReviews);
+        }
+
+        // Modify the existing loadReviews function
+        let currentStatusFilter = 'all';
+
+        function loadReviews(filter = 'all') {
+            currentStatusFilter = filter;
+            applyFilters();
+        }
+
+        function displayReviews(reviews) {
+            const reviewsList = document.getElementById('reviewsList');
+            reviewsList.innerHTML = reviews.map(review => `
+                <tr class="review-status-${review.status.toLowerCase()}">
+                    <td>
+                        <a href="javascript:void(0)" onclick="showReviewDetail(${review.id})">${review.productName}</a>
+                    </td>
+                    <td>
+                        <a href="javascript:void(0)" onclick="showReviewDetail(${review.id})">${review.customerName}</a>
+                    </td>
+                    <td>
+                        <div class="star-rating">
+                            ${getStarRating(review.rating)}
+                        </div>
+                    </td>
+                    <td>
+                        ${review.comment}
+                        ${review.response ? `
+                            <div class="mt-2 text-muted">
+                                <strong>Response:</strong> ${review.response}
+                            </div>
+                        ` : ''}
+                    </td>
+                    <td>${new Date(review.date).toLocaleDateString()}</td>
+                    <td>
+                        <span class="badge bg-${review.status === 'approved' ? 'success' : 
+                            review.status === 'rejected' ? 'danger' : 'warning'}">
+                            ${review.status}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            ${review.status === 'pending' ? `
+                                <button class="btn btn-sm btn-success" onclick="updateReviewStatus(${review.id}, 'approved')">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="updateReviewStatus(${review.id}, 'rejected')">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            ` : ''}
+                            ${!review.response ? `
+                                <button class="btn btn-sm btn-info" onclick="openResponseModal(${review.id})">
+                                    <i class="fas fa-reply"></i>
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-sm btn-danger" onclick="deleteReview(${review.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function showNotification(title, message, type = 'info') {
+            const toastContainer = document.querySelector('.toast-container');
+            const toastId = 'toast-' + Date.now();
+            
+            const toastHtml = `
+                <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header bg-${type} text-white">
+                        <strong class="me-auto">${title}</strong>
+                        <small class="text-white">just now</small>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+            toast.show();
+        }
+
+        function getStarRating(rating) {
+            return Array(5).fill('').map((_, index) => 
+                `<i class="fas fa-star${index < rating ? '' : '-o'}"></i>`
+            ).join('');
+        }
+
+        function showReviewDetail(reviewId) {
+            const reviews = JSON.parse(localStorage.getItem('reviews')) || [];
+            const review = reviews.find(r => r.id === reviewId);
+            
+            if (!review) return;
+
+            const product = products.find(p => p.id === review.productId);
+            
+            if (product) {
+                document.getElementById('productImage').src = product.image;
+                document.getElementById('productName').textContent = product.name;
+                document.getElementById('productPrice').textContent = `Price: $${product.price}`;
+                document.getElementById('productCategory').textContent = `Category: ${product.category}`;
+                document.getElementById('productRating').innerHTML = getStarRating(product.rating);
+            }
+
+            document.getElementById('reviewCustomer').textContent = review.customerName;
+            document.getElementById('reviewRating').innerHTML = getStarRating(review.rating);
+            document.getElementById('reviewDate').textContent = new Date(review.date).toLocaleDateString();
+            document.getElementById('reviewStatus').innerHTML = `
+                <span class="badge bg-${review.status === 'approved' ? 'success' : 
+                    review.status === 'rejected' ? 'danger' : 'warning'}">
+                    ${review.status}
+                </span>`;
+            document.getElementById('reviewComment').textContent = review.comment;
+
+            const responseSection = document.getElementById('reviewResponseSection');
+            const responseText = document.getElementById('reviewResponse');
+            if (review.response) {
+                responseSection.style.display = 'block';
+                responseText.textContent = review.response;
+            } else {
+                responseSection.style.display = 'none';
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('reviewDetailModal'));
+            modal.show();
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize sample reviews if not exists
+            if (!localStorage.getItem('reviews')) {
+                const sampleReviews = [
+                    {
+                        id: 1,
+                        productId: 1,
+                        productName: "Smartphone",
+                        customerName: "John Doe",
+                        rating: 4,
+                        comment: "Great product, fast performance!",
+                        date: "2024-03-15",
+                        status: "approved",
+                        response: null
+                    },
+                    {
+                        id: 2,
+                        productId: 2,
+                        productName: "T-Shirt",
+                        customerName: "Jane Smith",
+                        rating: 3,
+                        comment: "Good but battery life could be better",
+                        date: "2024-03-16",
+                        status: "pending",
+                        response: null
+                    },
+                    {
+                        id: 3,
+                        productId: 3,
+                        productName: "Sneakers",
+                        customerName: "Mike Johnson",
+                        rating: 5,
+                        comment: "Amazing sound quality and comfortable fit!",
+                        date: "2024-03-14",
+                        status: "approved",
+                        response: "Thank you for your positive feedback! We're glad you're enjoying the earbuds."
+                    },
+                    {
+                        id: 4,
+                        productId: 4,
+                        productName: "Wireless Earbuds",
+                        customerName: "Sarah Wilson",
+                        rating: 2,
+                        comment: "Double-clicking issue after 2 months of use",
+                        date: "2024-03-13",
+                        status: "rejected",
+                        response: null
+                    },
+                    {
+                        id: 5,
+                        productId: 5,
+                        productName: "Mechanical Keyboard",
+                        customerName: "Alex Brown",
+                        rating: 4,
+                        comment: "Great typing experience, but a bit loud",
+                        date: "2024-03-17",
+                        status: "pending",
+                        response: null
+                    },
+                    {
+                        id: 6,
+                        productId: 1,
+                        productName: "Smartphone",
+                        customerName: "Emily Davis",
+                        rating: 1,
+                        comment: "Received a defective unit, waiting for replacement",
+                        date: "2024-03-18",
+                        status: "pending",
+                        response: null
+                    }
+                ];
+                localStorage.setItem('reviews', JSON.stringify(sampleReviews));
+            }
+            
+            populateProductFilter();
+            loadReviews('all');
+
+            // Add event listeners for real-time filtering
+            document.getElementById('searchInput').addEventListener('input', applyFilters);
+            document.getElementById('productFilter').addEventListener('change', applyFilters);
+            document.getElementById('ratingFilter').addEventListener('change', applyFilters);
+        });
+    </script>
+</body>
+</html>
