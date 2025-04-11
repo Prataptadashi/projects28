@@ -57,6 +57,13 @@
                             <a class="nav-link text-white" href="manage-reviews.html">
                                 <i class="fas fa-star"></i> Reviews
                             </a>
+                        <!-- Add this after the Reviews nav item -->
+                        <!-- Add this in the sidebar navigation ul -->
+                        <!-- In your sidebar navigation -->
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="payment-analyzer.html">
+                                <i class="fas fa-credit-card"></i> Payment Analytics
+                            </a>
                         </li>
                         <li class="nav-item mt-auto">
                             <a class="nav-link text-white" href="#" onclick="logout()">
@@ -370,6 +377,7 @@
                         return { months, sales, returns };
                     }
 
+                    // Update the addSampleData function to include payment methods
                     function addSampleData() {
                         const products = [
                             { id: 1, name: 'Laptop', category: 'Electronics', price: 999 },
@@ -391,7 +399,8 @@
                                     quantity: 1
                                 }],
                                 total: 999,
-                                status: 'completed'
+                                status: 'completed',
+                                paymentMethod: 'Credit Card'
                             },
                             {
                                 id: 2,
@@ -750,3 +759,137 @@
                     </script>
                 <!-- Add before closing body tag -->
                     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+                <!-- Add this before the closing main tag -->
+                <!-- Add this before the closing main tag -->
+                <div id="paymentAnalyticsSection" style="display: none;">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1>Payment Methods Analytics</h1>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Payment Methods Distribution</h5>
+                                    <canvas id="paymentMethodsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Payment Methods Summary</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Payment Method</th>
+                                                    <th>Orders</th>
+                                                    <th>Total Revenue</th>
+                                                    <th>Share (%)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="paymentMethodsTable"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                // Add these functions before the DOMContentLoaded event listener
+                function showPaymentAnalytics() {
+                    // Hide other sections
+                    document.querySelectorAll('main > div').forEach(div => {
+                        div.style.display = 'none';
+                    });
+                    
+                    // Show payment analytics section
+                    document.getElementById('paymentAnalyticsSection').style.display = 'block';
+                    updatePaymentAnalytics();
+                }
+
+                function updatePaymentAnalytics() {
+                    const orders = JSON.parse(localStorage.getItem('orders')) || [];
+                    
+                    // Add payment method if not exists
+                    orders.forEach(order => {
+                        if (!order.paymentMethod) {
+                            order.paymentMethod = ['Credit Card', 'Debit Card', 'UPI', 'Net Banking', 'Cash on Delivery'][Math.floor(Math.random() * 5)];
+                        }
+                    });
+                    
+                    // Calculate payment method statistics
+                    const paymentStats = orders.reduce((acc, order) => {
+                        if (!acc[order.paymentMethod]) {
+                            acc[order.paymentMethod] = {
+                                method: order.paymentMethod,
+                                orders: 0,
+                                revenue: 0
+                            };
+                        }
+                        acc[order.paymentMethod].orders++;
+                        acc[order.paymentMethod].revenue += order.total;
+                        return acc;
+                    }, {});
+                
+                    // Calculate total revenue for percentage
+                    const totalRevenue = Object.values(paymentStats).reduce((sum, stat) => sum + stat.revenue, 0);
+                    
+                    // Update table
+                    const tableBody = document.getElementById('paymentMethodsTable');
+                    tableBody.innerHTML = Object.values(paymentStats)
+                        .sort((a, b) => b.revenue - a.revenue)
+                        .map(stat => `
+                            <tr>
+                                <td>${stat.method}</td>
+                                <td>${stat.orders}</td>
+                                <td>$${stat.revenue.toFixed(2)}</td>
+                                <td>${((stat.revenue / totalRevenue) * 100).toFixed(1)}%</td>
+                            </tr>
+                        `).join('');
+                
+                    // Update chart
+                    const existingChart = Chart.getChart('paymentMethodsChart');
+                    if (existingChart) {
+                        existingChart.destroy();
+                    }
+                
+                    new Chart(document.getElementById('paymentMethodsChart'), {
+                        type: 'pie',
+                        data: {
+                            labels: Object.values(paymentStats).map(stat => stat.method),
+                            datasets: [{
+                                data: Object.values(paymentStats).map(stat => stat.revenue),
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.7)',
+                                    'rgba(54, 162, 235, 0.7)',
+                                    'rgba(255, 206, 86, 0.7)',
+                                    'rgba(75, 192, 192, 0.7)',
+                                    'rgba(153, 102, 255, 0.7)'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'right'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const value = context.raw;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return `${context.label}: $${value.toFixed(2)} (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                
+                    localStorage.setItem('orders', JSON.stringify(orders));
+                }

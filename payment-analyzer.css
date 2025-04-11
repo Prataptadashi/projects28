@@ -1,0 +1,57 @@
+.card {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.table-primary {
+    background-color: rgba(13, 110, 253, 0.1) !important;
+    font-weight: bold;
+}
+
+#totalTransactions, #totalRevenue, #topMethod {
+    font-size: 2rem;
+    margin-bottom: 0;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-size: 1.2rem;
+}
+
+.navbar-brand i {
+    margin-right: 8px;
+}
+
+.table th {
+    background-color: #f8f9fa;
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+#customDateRange {
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    height: 38px;
+    margin-bottom: 1px;
+}
+
+.card-title {
+    margin-bottom: 1.5rem;
+}
