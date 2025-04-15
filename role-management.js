@@ -210,3 +210,84 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeRoles();
     setupPermissionsForm();
 });
+
+// Add this function to handle saving roles
+function saveRole() {
+    const roleId = document.getElementById('roleId').value;
+    const name = document.getElementById('roleName').value;
+    const description = document.getElementById('roleDescription').value;
+    
+    if (!name) {
+        alert('Role name is required');
+        return;
+    }
+    
+    // Collect permissions
+    const permissions = {};
+    Object.keys(modulePermissions).forEach(module => {
+        permissions[module] = {};
+        modulePermissions[module].forEach(permission => {
+            const checkbox = document.getElementById(`${module}_${permission}`);
+            permissions[module][permission] = checkbox.checked;
+        });
+    });
+    
+    if (roleId) {
+        // Edit existing role
+        const index = roles.findIndex(r => r.id === roleId);
+        if (index !== -1) {
+            roles[index] = { ...roles[index], name, description, permissions };
+        }
+    } else {
+        // Add new role
+        const newRole = {
+            id: Date.now().toString(),
+            name,
+            description,
+            permissions
+        };
+        roles.push(newRole);
+    }
+    
+    // Save to localStorage and update table
+    localStorage.setItem('roles', JSON.stringify(roles));
+    updateRolesTable();
+    
+    // Close modal
+    const modalEl = document.getElementById('roleModal');
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    if (modal) modal.hide();
+}
+
+
+function setupPermissionsForm() {
+    const container = document.getElementById('permissionsContainer');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    Object.entries(modulePermissions).forEach(([module, permissions]) => {
+        const moduleDiv = document.createElement('div');
+        moduleDiv.className = 'permission-group mb-3';
+        
+        moduleDiv.innerHTML = `
+            <h6 class="text-capitalize fw-bold mb-3">${module}</h6>
+            <div class="row g-3">
+                ${permissions.map(permission => `
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" 
+                                id="${module}_${permission}"
+                                name="${module}_${permission}">
+                            <label class="form-check-label" for="${module}_${permission}">
+                                ${permission.charAt(0).toUpperCase() + permission.slice(1)}
+                            </label>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        
+        container.appendChild(moduleDiv);
+    });
+}
