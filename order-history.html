@@ -4,13 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order History</title>
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
     <style>
         body {
             background-color: #f8f9fa;
+            padding: 20px 0;
         }
         .order-card {
             margin-bottom: 20px;
@@ -18,40 +17,63 @@
             border-radius: 8px;
             padding: 20px;
             background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
         }
-        .order-card h3 {
-            margin-bottom: 10px;
-        }
-        .order-card p {
-            margin: 5px 0;
+        .order-card:hover {
+            transform: translateY(-2px);
         }
         .order-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+        }
+        .order-item:last-child {
+            border-bottom: none;
         }
         .order-item img {
-            width: 50px;
-            height: 50px;
-            border-radius: 8px;
+            width: 100px;
+            height: 100px;
             object-fit: cover;
+            border-radius: 8px;
         }
-        .order-item p {
-            margin: 0;
+        .back-button {
+            margin: 20px 0;
+            display: inline-block;
+            text-decoration: none;
+        }
+        .status-badge {
+            padding: 8px 12px;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
-    <div class="container py-10">
-        <h1 class="text-3xl font-bold text-center mb-6">Order History</h1>
-        <div id="order-history" class="space-y-4">
-            <!-- Orders will be dynamically inserted here -->
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">Order History</h1>
+            <a href="index.html" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Home
+            </a>
         </div>
-        <a href="index.html" class="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Back to Home</a>
+        
+        <!-- Order filters -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <select class="form-select" id="statusFilter">
+                    <option value="all">All Orders</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Delivered">Delivered</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <input type="date" class="form-control" id="dateFilter">
+            </div>
+        </div>
+
+        <div id="order-history"></div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Initialize sample orders if none exist
@@ -59,10 +81,10 @@
             const sampleOrders = [
                 {
                     id: 1,
-                    date: new Date('2024-03-18').toLocaleDateString(),
+                    date: '2024-03-18',
                     items: [
-                        { id: 1, name: "Smartphone", price: 1000, quantity: 1, image: "/images/p1.png" },
-                        { id: 7, name: "Laptop", price: 1200, quantity: 1, image: "/images/p1.png" }
+                        { id: 1, name: "Smartphone", price: 1000, quantity: 1, image: "images/p1.png" },
+                        { id: 7, name: "Laptop", price: 1200, quantity: 1, image: "images/p1.png" }
                     ],
                     total: 2200,
                     status: 'Processing',
@@ -70,71 +92,111 @@
                 },
                 {
                     id: 2,
-                    date: new Date('2024-03-19').toLocaleDateString(),
+                    date: '2024-03-19',
                     items: [
-                        { id: 2, name: "T-Shirt", price: 20, quantity: 2, image: "/images/c2.png" },
-                        { id: 3, name: "Sneakers", price: 80, quantity: 1, image: "/images/s1.png" }
+                        { id: 2, name: "T-Shirt", price: 20, quantity: 2, image: "images/c2.png" },
+                        { id: 3, name: "Sneakers", price: 80, quantity: 1, image: "images/s1.png" }
                     ],
                     total: 120,
-                    status: 'Pending',
+                    status: 'Delivered',
                     address: '456 Oak St, Town'
                 }
             ];
             localStorage.setItem('orders', JSON.stringify(sampleOrders));
         }
 
-        // Display Orders
+        function getStatusBadgeClass(status) {
+            switch(status) {
+                case 'Delivered': return 'bg-success';
+                case 'Processing': return 'bg-primary';
+                case 'Pending': return 'bg-warning';
+                default: return 'bg-secondary';
+            }
+        }
+
         function displayOrders() {
             const orders = JSON.parse(localStorage.getItem("orders")) || [];
-            const orderHistory = document.getElementById("order-history");
-            orderHistory.innerHTML = "";
-
-            if (orders.length === 0) {
-                orderHistory.innerHTML = `<p class="text-center">No orders found.</p>`;
-                return;
+            const statusFilter = document.getElementById("statusFilter").value;
+            const dateFilter = document.getElementById("dateFilter").value;
+            
+            let filteredOrders = orders;
+            
+            // Apply filters
+            if (statusFilter !== 'all') {
+                filteredOrders = filteredOrders.filter(order => order.status === statusFilter);
+            }
+            if (dateFilter) {
+                filteredOrders = filteredOrders.filter(order => order.date === dateFilter);
             }
 
-            orders.forEach(order => {
-                const orderItems = order.items.map(item => `
-                    <div class="order-item" onclick="window.location.href='product-details.html?id=${item.id}'" style="cursor: pointer;">
-                        <img src="${item.image}" alt="${item.name}" style="width: 100px; height: 100px; object-fit: cover;">
-                        <div>
-                            <h6 class="mb-0">${item.name}</h6>
-                            <p>Quantity: ${item.quantity} × ₹${item.price}</p>
-                            <p>Subtotal: ₹${item.price * item.quantity}</p>
-                        </div>
-                    </div>
-                `).join("");
-
-                orderHistory.innerHTML += `
+            const orderHistory = document.getElementById("order-history");
+            orderHistory.innerHTML = filteredOrders.length === 0 
+                ? '<div class="alert alert-info">No orders found.</div>'
+                : filteredOrders.map(order => `
                     <div class="order-card">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h3>Order #${order.id}</h3>
-                            <span class="badge bg-${order.status === 'Delivered' ? 'success' : 'primary'}">${order.status}</span>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h3 class="mb-0">Order #${order.id}</h3>
+                                <small class="text-muted">Placed on ${new Date(order.date).toLocaleDateString()}</small>
+                            </div>
+                            <span class="badge status-badge ${getStatusBadgeClass(order.status)}">${order.status}</span>
                         </div>
-                        <p>Date: ${order.date}</p>
-                        <p>Shipping Address: ${order.address}</p>
-                        <div class="order-items">
-                            ${orderItems}
+                        <div class="mb-3">
+                            <i class="fas fa-map-marker-alt"></i> ${order.address}
                         </div>
-                        <div class="mt-3">
-                            <h5 class="text-end">Total Amount: ₹${order.total}</h5>
+                        ${order.items.map(item => `
+                            <div class="order-item" onclick="window.location.href='product-details.html?id=${item.id}'" style="cursor: pointer;">
+                                <div class="row align-items-center">
+                                    <div class="col-md-2">
+                                        <img src="${item.image}" alt="${item.name}" class="img-fluid">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5 class="mb-1">${item.name}</h5>
+                                        <p class="mb-0 text-muted">Quantity: ${item.quantity}</p>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <p class="mb-0">₹${item.price} × ${item.quantity}</p>
+                                        <p class="mb-0 fw-bold">₹${item.price * item.quantity}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                            <h4 class="mb-0">Total: ₹${order.total}</h4>
+                            <div>
+                                <button onclick="reorder(${order.id})" class="btn btn-primary">
+                                    <i class="fas fa-shopping-cart"></i> Reorder
+                                </button>
+                            </div>
                         </div>
-                        <button onclick="reorder(${order.id})" class="btn btn-primary mt-2">Reorder</button>
                     </div>
-                `;
-            });
+                `).join('');
         }
 
         function reorder(orderId) {
             const orders = JSON.parse(localStorage.getItem("orders")) || [];
             const order = orders.find(o => o.id === orderId);
             if (order) {
-                localStorage.setItem("cart", JSON.stringify(order.items));
-                alert("Items added to cart. Proceed to checkout.");
-                window.location.href = "checkout.html";
+                const cart = JSON.parse(localStorage.getItem("cart")) || [];
+                order.items.forEach(item => cart.push(item));
+                localStorage.setItem("cart", JSON.stringify(cart));
+                
+                const toast = document.createElement('div');
+                toast.className = 'alert alert-success position-fixed top-0 end-0 m-3';
+                toast.style.zIndex = '1050';
+                toast.innerHTML = 'Items added to cart successfully!';
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.remove();
+                    window.location.href = "cart.html";
+                }, 2000);
             }
         }
+
+        // Add event listeners for filters
+        document.getElementById("statusFilter").addEventListener("change", displayOrders);
+        document.getElementById("dateFilter").addEventListener("change", displayOrders);
 
         // Display Orders When the Page Loads
         displayOrders();
