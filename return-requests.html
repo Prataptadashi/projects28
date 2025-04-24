@@ -32,7 +32,23 @@
     <div class="container mt-4">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Return Requests</h5>
+                <h5 class="card-title mb-4">Return Requests</h5>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Search by user or product name...">
+                    </div>
+                    <div class="col-md-3">
+                        <select id="statusFilter" class="form-select">
+                            <option value="all">All Status</option>
+                            <option value="Requested">Requested</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                            <option value="Refunded">Refunded</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
@@ -47,6 +63,40 @@
                         </thead>
                         <tbody id="returnRequestsTable"></tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this before the Status Change Confirmation Modal -->
+    <div class="modal fade" id="detailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Return Request Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Order ID:</strong> <span id="detailOrderId"></span></p>
+                            <p><strong>Customer:</strong> <span id="detailCustomer"></span></p>
+                            <p><strong>Product:</strong> <span id="detailProduct"></span></p>
+                            <p><strong>Status:</strong> <span id="detailStatus"></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Requested Date:</strong> <span id="detailRequestedDate"></span></p>
+                            <p><strong>Reviewed Date:</strong> <span id="detailReviewedDate"></span></p>
+                            <p><strong>Refund Amount:</strong> $<span id="detailRefundAmount"></span></p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <strong>Reason:</strong>
+                        <p id="detailReason" class="mt-2"></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
