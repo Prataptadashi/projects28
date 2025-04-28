@@ -603,6 +603,23 @@
         }
 
         function navigateToProductDetails(productId) {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                // Save to recently viewed
+                const recentlyViewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+                // Remove if already exists
+                const index = recentlyViewed.findIndex(item => item.id === productId);
+                if (index > -1) {
+                    recentlyViewed.splice(index, 1);
+                }
+                // Add to front of array
+                recentlyViewed.unshift(product);
+                // Keep only last 10 items
+                if (recentlyViewed.length > 10) {
+                    recentlyViewed.pop();
+                }
+                localStorage.setItem('recentlyViewed', JSON.stringify(recentlyViewed));
+            }
             window.location.href = `product-details.html?id=${productId}`;
         }
 
@@ -670,4 +687,105 @@
         .dark-mode .footer-text {
             color: #ffffff;
         }
-    </style>
+</style>
+
+<!-- Before closing body tag -->
+    <script src="js/recently-viewed.js"></script>
+    <script>
+        // Initialize recently viewed products
+        document.addEventListener('DOMContentLoaded', () => {
+            const recentlyViewed = new RecentlyViewedProducts();
+            const recentProducts = recentlyViewed.getRecentlyViewed();
+            const container = document.getElementById('recentlyViewedProducts');
+            
+            if (container && recentProducts.length > 0) {
+                container.innerHTML = recentProducts.map(item => `
+                    <div class="product-card bg-white p-4 rounded shadow-md text-center cursor-pointer min-w-[200px]">
+                        <img src="${item.productData.image}" alt="${item.productData.name}" class="w-full h-40 object-cover mb-3">
+                        <h3 class="text-lg font-bold">${item.productData.name}</h3>
+                        <p class="text-gray-600">Price: ₹${item.productData.price}</p>
+                        <button class="mt-3 px-4 py-2 bg-blue-600 text-white rounded" onclick="navigateToProductDetails(${item.productId})">View Details</button>
+                    </div>
+                `).join('');
+            }
+        });
+
+        function scrollRecentProducts(direction) {
+            const container = document.querySelector('#recentlyViewedProducts');
+            const scrollAmount = 300;
+            if (direction === 'left') {
+                container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+            } else {
+                container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+            }
+        }
+    </script>
+    </body>
+</html>
+
+<style>
+        /* Dark mode styles */
+        .dark-mode {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+
+        .dark-mode .bg-white {
+            background-color: #2d2d2d !important;
+            color: #ffffff;
+        }
+
+        .dark-mode .text-gray-700 {
+            color: #e0e0e0;
+        }
+
+        .dark-mode .bg-gray-100 {
+            background-color: #1a1a1a;
+        }
+
+        .dark-mode .product-card {
+            background-color: #2d2d2d;
+            border: 1px solid #404040;
+        }
+
+        .dark-mode .card {
+            background-color: #2d2d2d;
+            color: #ffffff;
+        }
+
+        .dark-mode .table-light {
+            background-color: #404040;
+            color: #ffffff;
+        }
+
+        .dark-mode input, .dark-mode select {
+            background-color: #404040;
+            color: #ffffff;
+            border-color: #505050;
+        }
+
+        .dark-mode .footer-text {
+            color: #ffffff;
+        }
+</style>
+
+    <!-- After Product Listing section and before Promotional Cards section -->
+    </section>
+
+    <!-- Recently Viewed Products Section -->
+    <section class="container mx-auto px-4 mt-10">
+        <h2 class="text-3xl font-bold mb-6">Recently Viewed</h2>
+        <div class="recently-viewed-container relative">
+            <button class="scroll-btn prev absolute left-0 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow-md z-10" onclick="scrollRecentProducts('left')">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="products-scroll flex overflow-x-auto gap-6 py-4 px-8" id="recentlyViewedProducts">
+                <!-- Products will be inserted here dynamically -->
+            </div>
+            <button class="scroll-btn next absolute right-0 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow-md z-10" onclick="scrollRecentProducts('right')">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </section>
+
+    <!-- Promotional Cards section starts -->
