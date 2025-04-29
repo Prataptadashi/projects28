@@ -102,6 +102,24 @@
                     <i class="fas fa-shopping-cart"></i> Cart
                     <span class="cart-count" id="cart-count">0</span>
                 </a>
+                <!-- Add Notifications System -->
+                <div class="relative">
+                    <button id="notifications-btn" class="text-gray-700 hover:text-blue-600" onclick="toggleNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span id="notifications-count" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs px-2 py-0.5">0</span>
+                    </button>
+                    <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50">
+                        <div class="p-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-bold">Notifications</h3>
+                                <button onclick="markAllAsRead()" class="text-sm text-blue-600 hover:text-blue-800">Mark all as read</button>
+                            </div>
+                            <div id="notifications-list" class="space-y-4 max-h-96 overflow-y-auto">
+                                <!-- Notifications will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <a class="text-gray-700 hover:text-blue-600" href="wishlist.html"><i class="fas fa-heart"></i> Wishlist</a>
                 <a class="text-gray-700 hover:text-blue-600" href="order-history.html"><i class="fas fa-history"></i> Order History</a>
                 <a class="text-gray-700 hover:text-blue-600" href="#"><i class="fas fa-shopping-cart"></i> Cart</a>
@@ -638,6 +656,98 @@
             autoplay: { delay: 3000 },
             pagination: { el: '.swiper-pagination', clickable: true },
             navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' }
+        });
+
+        // Notifications System
+        let notifications = JSON.parse(localStorage.getItem('notifications')) || [];
+
+        function createNotification(title, message) {
+            const notification = {
+                id: Date.now(),
+                title,
+                message,
+                isRead: false,
+                createdAt: new Date().toISOString()
+            };
+            notifications.unshift(notification);
+            localStorage.setItem('notifications', JSON.stringify(notifications));
+            updateNotificationsUI();
+        }
+
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notifications-dropdown');
+            dropdown.classList.toggle('hidden');
+            updateNotificationsUI();
+        }
+
+        function markAsRead(notificationId) {
+            notifications = notifications.map(notif => {
+                if (notif.id === notificationId) {
+                    return { ...notif, isRead: true };
+                }
+                return notif;
+            });
+            localStorage.setItem('notifications', JSON.stringify(notifications));
+            updateNotificationsUI();
+        }
+
+        function markAllAsRead() {
+            notifications = notifications.map(notif => ({ ...notif, isRead: true }));
+            localStorage.setItem('notifications', JSON.stringify(notifications));
+            updateNotificationsUI();
+        }
+
+        function deleteNotification(notificationId) {
+            notifications = notifications.filter(notif => notif.id !== notificationId);
+            localStorage.setItem('notifications', JSON.stringify(notifications));
+            updateNotificationsUI();
+        }
+
+        function updateNotificationsUI() {
+            const notificationsList = document.getElementById('notifications-list');
+            const notificationsCount = document.getElementById('notifications-count');
+            const unreadCount = notifications.filter(n => !n.isRead).length;
+
+            notificationsCount.textContent = unreadCount;
+            notificationsCount.classList.toggle('hidden', unreadCount === 0);
+
+            notificationsList.innerHTML = notifications.map(notification => `
+                <div class="notification-item p-3 border rounded-lg ${notification.isRead ? '' : 'bg-blue-50'}">
+                    <div class="flex justify-between items-start">
+                        <h4 class="font-semibold">${notification.title}</h4>
+                        <button onclick="deleteNotification(${notification.id})" class="text-red-500 hover:text-red-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-1">${notification.message}</p>
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="text-xs text-gray-500">${new Date(notification.createdAt).toLocaleString()}</span>
+                        ${!notification.isRead ? `
+                            <button onclick="markAsRead(${notification.id})" class="text-xs text-blue-600 hover:text-blue-800">
+                                Mark as read
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize notifications
+        if (!localStorage.getItem('notifications')) {
+            createNotification('Welcome!', 'Welcome to our store! Start shopping now.');
+            createNotification('Special Offer', '20% off on all electronics - Limited time only!');
+        }
+
+        // Update notifications UI on page load
+        document.addEventListener('DOMContentLoaded', updateNotificationsUI);
+
+        // Close notifications dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('notifications-dropdown');
+            const notificationsBtn = document.getElementById('notifications-btn');
+            if (!dropdown.contains(event.target) && !notificationsBtn.contains(event.target)) {
+                dropdown.classList.add('hidden');
+            }
         });
     </script>
 </body>
